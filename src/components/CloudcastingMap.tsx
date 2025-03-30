@@ -1,9 +1,11 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Info, ZoomIn, ZoomOut } from 'lucide-react';
+import { chartEvents } from './SolarForecastChart';
 
 // Replace with your Mapbox token
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiZmxvd2lydHoiLCJhIjoiY2tlcGhtMnFnMWRzajJ2bzhmdGs5ZXVveSJ9.Dq5iSpi54SaajfdMyM_8fQ';
@@ -14,6 +16,7 @@ interface CloudFeature {
   properties: {
     id: string;
     density: number;
+    name?: string;
   };
   geometry: {
     type: "Polygon";
@@ -26,13 +29,13 @@ interface CloudCollection {
   features: CloudFeature[];
 }
 
-// Properly typed cloud data
+// Enhanced cloud data with names for locations
 const dummyCloudData: CloudCollection = {
   type: "FeatureCollection",
   features: [
     {
       type: "Feature",
-      properties: { id: 'cloud1', density: 0.7 },
+      properties: { id: 'cloud1', density: 0.7, name: "Midwest Region" },
       geometry: {
         type: "Polygon",
         coordinates: [[
@@ -50,7 +53,7 @@ const dummyCloudData: CloudCollection = {
     },
     {
       type: "Feature",
-      properties: { id: 'cloud2', density: 0.5 },
+      properties: { id: 'cloud2', density: 0.5, name: "Western Region" },
       geometry: {
         type: "Polygon",
         coordinates: [[
@@ -64,6 +67,21 @@ const dummyCloudData: CloudCollection = {
           [-120, 35]
         ]]
       }
+    },
+    {
+      type: "Feature",
+      properties: { id: 'cloud3', density: 0.3, name: "Eastern Region" },
+      geometry: {
+        type: "Polygon",
+        coordinates: [[
+          [-80, 38],
+          [-75, 36],
+          [-70, 39],
+          [-72, 43],
+          [-78, 44],
+          [-80, 38]
+        ]]
+      }
     }
   ]
 };
@@ -74,6 +92,7 @@ const CloudcastingMap: React.FC = () => {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapboxTokenInput, setMapboxTokenInput] = useState(MAPBOX_TOKEN);
   const [useCustomToken, setUseCustomToken] = useState(false);
+  const [selectedFeature, setSelectedFeature] = useState<string | null>(null);
   
   // Initialize map
   useEffect(() => {
@@ -86,43 +105,139 @@ const CloudcastingMap: React.FC = () => {
     try {
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/dark-v11', // Changed to dark style
-        center: [-122.4, 37.8], // Centered on San Francisco
-        zoom: 11,
+        style: 'mapbox://styles/mapbox/dark-v11',
+        center: [-95, 40], // Centered on USA
+        zoom: 3,
         projection: 'mercator'
       });
 
       map.current.on('load', () => {
         setMapLoaded(true);
         
-        // Add cloud data source with properly typed data
-        if (map.current) {
-          map.current.addSource('clouds', {
-            type: 'geojson',
-            data: dummyCloudData
+        if (!map.current) return;
+        
+        // Add cloud data source
+        map.current.addSource('clouds', {
+          type: 'geojson',
+          data: dummyCloudData
+        });
+        
+        // Add cloud layer
+        map.current.addLayer({
+          id: 'clouds-fill',
+          type: 'fill',
+          source: 'clouds',
+          paint: {
+            'fill-color': '#93C5FD',
+            'fill-opacity': ['get', 'density']
+          }
+        });
+        
+        map.current.addLayer({
+          id: 'clouds-outline',
+          type: 'line',
+          source: 'clouds',
+          paint: {
+            'line-color': '#60A5FA',
+            'line-width': 1
+          }
+        });
+        
+        // Add clickable regions to make the map interactive
+        map.current.addLayer({
+          id: 'clouds-click',
+          type: 'fill',
+          source: 'clouds',
+          paint: {
+            'fill-color': '#ffffff',
+            'fill-opacity': 0  // Transparent but clickable
+          }
+        });
+        
+        // Add city markers to make more click targets
+        const cities = [
+          { lngLat: [-74.0060, 40.7128], id: 'nyc', name: 'New York City' },
+          { lngLat: [-87.6298, 41.8781], id: 'chicago', name: 'Chicago' },
+          { lngLat: [-122.4194, 37.7749], id: 'sf', name: 'San Francisco' },
+          { lngLat: [-104.9903, 39.7392], id: 'denver', name: 'Denver' },
+          { lngLat: [-95.3698, 29.7604], id: 'houston', name: 'Houston' },
+          { lngLat: [-84.3880, 33.7490], id: 'atlanta', name: 'Atlanta' },
+        ];
+        
+        // Add markers for the cities
+        cities.forEach(city => {
+          const el = document.createElement('div');
+          el.className = 'city-marker';
+          el.style.width = '10px';
+          el.style.height = '10px';
+          el.style.borderRadius = '50%';
+          el.style.backgroundColor = '#FFCA28';
+          
+          const marker = new mapboxgl.Marker(el)
+            .setLngLat(city.lngLat)
+            .addTo(map.current!);
+            
+          // Add click handler to the marker element
+          el.addEventListener('click', () => {
+            setSelectedFeature(city.id);
+            chartEvents.publish({
+              id: city.id,
+              name: city.name,
+              coordinates: city.lngLat
+            });
+          });
+        });
+        
+        // Handle clicks on the clouds
+        map.current.on('click', 'clouds-click', (e) => {
+          if (e.features && e.features[0]) {
+            const feature = e.features[0];
+            const featureId = feature.properties.id;
+            const featureName = feature.properties.name;
+            
+            setSelectedFeature(featureId);
+            
+            // Publish the event to update the chart
+            chartEvents.publish({
+              id: featureId,
+              name: featureName,
+              coordinates: e.lngLat
+            });
+          }
+        });
+        
+        // Change cursor when hovering over clickable areas
+        map.current.on('mouseenter', 'clouds-click', () => {
+          if (map.current) {
+            map.current.getCanvas().style.cursor = 'pointer';
+          }
+        });
+        
+        map.current.on('mouseleave', 'clouds-click', () => {
+          if (map.current) {
+            map.current.getCanvas().style.cursor = '';
+          }
+        });
+        
+        // Click anywhere on map to update chart
+        map.current.on('click', (e) => {
+          // Get the features at the clicked point
+          const features = map.current?.queryRenderedFeatures(e.point, { 
+            layers: ['clouds-click'] 
           });
           
-          // Add cloud layer
-          map.current.addLayer({
-            id: 'clouds-fill',
-            type: 'fill',
-            source: 'clouds',
-            paint: {
-              'fill-color': '#93C5FD',
-              'fill-opacity': ['get', 'density']
-            }
-          });
-          
-          map.current.addLayer({
-            id: 'clouds-outline',
-            type: 'line',
-            source: 'clouds',
-            paint: {
-              'line-color': '#60A5FA',
-              'line-width': 1
-            }
-          });
-        }
+          // If we didn't click on a cloud feature, still update the chart with a random ID
+          if (!features || features.length === 0) {
+            const randomId = `pos-${e.lngLat.lng.toFixed(2)}-${e.lngLat.lat.toFixed(2)}`;
+            setSelectedFeature(randomId);
+            
+            chartEvents.publish({
+              id: randomId,
+              name: `Location (${e.lngLat.lng.toFixed(1)}, ${e.lngLat.lat.toFixed(1)})`,
+              coordinates: e.lngLat
+            });
+          }
+        });
       });
       
       // Add navigation controls
@@ -146,7 +261,7 @@ const CloudcastingMap: React.FC = () => {
       {!mapLoaded && (
         <div className="absolute inset-0 flex items-center justify-center bg-slate-900/80 z-50">
           <div className="text-center space-y-4">
-            <div className="animate-spin h-8 w-8 border-4 border-yellow-500 rounded-full border-t-transparent mx-auto"></div>
+            <div className="animate-spin h-8 w-8 border-4 border-blue-500 rounded-full border-t-transparent mx-auto"></div>
             <p className="text-lg font-medium text-white">Loading Map...</p>
             
             {/* Token input option if default fails */}
@@ -159,10 +274,10 @@ const CloudcastingMap: React.FC = () => {
                   type="text"
                   value={mapboxTokenInput}
                   onChange={(e) => setMapboxTokenInput(e.target.value)}
-                  className="flex h-9 rounded-md border border-slate-700 bg-slate-800 px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-yellow-500 disabled:cursor-not-allowed disabled:opacity-50 flex-1 text-white"
+                  className="flex h-9 rounded-md border border-slate-700 bg-slate-800 px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 flex-1 text-white"
                   placeholder="Enter Mapbox token"
                 />
-                <Button onClick={handleCustomTokenChange} variant="outline" className="border-yellow-500 text-yellow-500 hover:bg-yellow-500/10">
+                <Button onClick={handleCustomTokenChange} variant="outline" className="border-blue-500 text-blue-500 hover:bg-blue-500/10">
                   Apply
                 </Button>
               </div>
@@ -177,6 +292,11 @@ const CloudcastingMap: React.FC = () => {
       {/* Main Map Container */}
       <div className="relative flex-grow">
         <div ref={mapContainer} className="absolute inset-0" />
+        
+        {/* Instructions Overlay */}
+        <div className="absolute top-4 left-4 z-10 bg-slate-800/80 backdrop-blur-sm p-2 rounded-md border border-slate-700 text-xs text-white">
+          Click on the map to update the forecast chart
+        </div>
         
         {/* Map Controls */}
         <div className="absolute bottom-4 right-4 z-10 space-y-2">

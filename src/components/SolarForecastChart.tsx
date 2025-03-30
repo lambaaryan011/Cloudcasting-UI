@@ -1,14 +1,32 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { ChartContainer, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
-const generateMockData = () => {
+// Event bus for communication between components
+export const chartEvents = {
+  listeners: new Map(),
+  subscribe: (id: string, callback: (data: any) => void) => {
+    chartEvents.listeners.set(id, callback);
+    return () => chartEvents.listeners.delete(id);
+  },
+  publish: (data: any) => {
+    chartEvents.listeners.forEach(callback => callback(data));
+  }
+};
+
+const generateMockData = (locationId: string = 'default') => {
   const data = [];
   const days = ['Sat 22', 'Sun 23', 'Today', 'Tue 25'];
   const hoursPerDay = 24;
   const totalPoints = days.length * hoursPerDay;
+  
+  // Generate a seed value from the locationId string
+  let seed = 0;
+  for (let i = 0; i < locationId.length; i++) {
+    seed += locationId.charCodeAt(i);
+  }
   
   for (let i = 0; i < totalPoints; i++) {
     const hour = i % hoursPerDay;
@@ -16,14 +34,17 @@ const generateMockData = () => {
     const formattedHour = hour.toString().padStart(2, '0') + ':00';
     
     // Create a basic sine wave for the yellow line (actual energy)
-    const baseValue = Math.sin((i / 12) * Math.PI) * 7;
+    // Use the seed to slightly modify the pattern for different locations
+    const seedFactor = (seed % 10) / 10;
+    const baseValue = Math.sin(((i / 12) + seedFactor) * Math.PI) * (7 + seedFactor * 2);
     const actualValue = hour >= 6 && hour <= 18 ? Math.max(0, baseValue) : 0;
     
     // Create a slightly different forecast line
     const forecastValue = actualValue * (1 + (Math.random() * 0.1 - 0.05));
     
     // Create bar data for the blue bars (cloud cover or precipitation)
-    const cloudValue = hour >= 6 && hour <= 18 ? Math.random() * 5 * (Math.random() > 0.7 ? 1 : 0) : 0;
+    const cloudValue = hour >= 6 && hour <= 18 ? 
+      Math.random() * 5 * (Math.random() > (0.7 - seedFactor * 0.2) ? 1 : 0) : 0;
     
     data.push({
       time: formattedHour,
@@ -38,8 +59,6 @@ const generateMockData = () => {
   
   return data;
 };
-
-const solarData = generateMockData();
 
 const chartConfig = {
   actual: {
@@ -57,9 +76,27 @@ const chartConfig = {
 };
 
 const SolarForecastChart: React.FC = () => {
+  const [solarData, setSolarData] = useState(generateMockData());
+  const [locationText, setLocationText] = useState('Default Location');
+
+  // Listen for map click events and regenerate chart data
+  useEffect(() => {
+    const unsubscribe = chartEvents.subscribe('map-click', (data) => {
+      // Update the chart data based on the clicked location
+      setSolarData(generateMockData(data.id));
+      setLocationText(data.name || `Location ${data.id}`);
+    });
+    
+    return () => unsubscribe();
+  }, []);
+
   return (
     <Card className="p-0 border-0 bg-gray-700 rounded-none">
       <div className="h-[350px] w-full">
+        <div className="absolute left-4 top-3 z-10 bg-gray-800/80 backdrop-blur-sm px-3 py-1 rounded text-sm text-white">
+          {locationText}
+        </div>
+        
         <ChartContainer config={chartConfig} className="h-full bg-gray-700 text-white">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
