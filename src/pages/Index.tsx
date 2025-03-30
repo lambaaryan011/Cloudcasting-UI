@@ -1,17 +1,25 @@
 
 import React from 'react';
-import CloudcastingHeader from '@/components/CloudcastingHeader';
+import SolarHeader from '@/components/SolarHeader';
+import RegionHeader from '@/components/RegionHeader';
 import CloudcastingMap from '@/components/CloudcastingMap';
+import SolarForecastChart from '@/components/SolarForecastChart';
 
 const Index = () => {
   return (
-    <div className="flex flex-col h-screen bg-cloud-light">
-      <CloudcastingHeader />
-      <main className="flex-grow">
-        <CloudcastingMap />
+    <div className="flex flex-col h-screen bg-slate-900">
+      <SolarHeader />
+      <RegionHeader />
+      <main className="flex-grow grid grid-cols-1 md:grid-cols-2 h-[calc(100vh-132px)]">
+        <div className="h-full overflow-hidden">
+          <SolarForecastChart />
+        </div>
+        <div className="h-full">
+          <CloudcastingMap />
+        </div>
       </main>
-      <footer className="bg-white py-2 text-center text-xs text-muted-foreground border-t border-cloud-border">
-        <p>Cloudcasting UI Prototype • {new Date().getFullYear()}</p>
+      <footer className="bg-slate-900 py-1 text-center text-xs text-gray-500 border-t border-slate-800">
+        <p>Solar Forecast Dashboard • {new Date().getFullYear()}</p>
       </footer>
     </div>
   );
