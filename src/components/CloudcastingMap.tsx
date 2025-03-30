@@ -9,15 +9,33 @@ import { RefreshCw, Info, ZoomIn, ZoomOut } from 'lucide-react';
 // Replace with your Mapbox token
 const MAPBOX_TOKEN = 'pk.eyJ1IjoibG92YWJsZXRva2VuIiwiYSI6ImNsdDBhdWNoZzA2cmMyanA3NnUzajZmNnMifQ.OQsI21JrQfewDBBdnM-bUQ';
 
-// Dummy cloud data (GeoJSON polygon)
-const dummyCloudData = {
-  type: 'FeatureCollection',
+// Define correct GeoJSON types
+interface CloudFeature {
+  type: "Feature";
+  properties: {
+    id: string;
+    density: number;
+  };
+  geometry: {
+    type: "Polygon";
+    coordinates: number[][][];
+  };
+}
+
+interface CloudCollection {
+  type: "FeatureCollection";
+  features: CloudFeature[];
+}
+
+// Properly typed cloud data
+const dummyCloudData: CloudCollection = {
+  type: "FeatureCollection",
   features: [
     {
-      type: 'Feature',
+      type: "Feature",
       properties: { id: 'cloud1', density: 0.7 },
       geometry: {
-        type: 'Polygon',
+        type: "Polygon",
         coordinates: [[
           [-100, 40],
           [-95, 37],
@@ -32,10 +50,10 @@ const dummyCloudData = {
       }
     },
     {
-      type: 'Feature',
+      type: "Feature",
       properties: { id: 'cloud2', density: 0.5 },
       geometry: {
-        type: 'Polygon',
+        type: "Polygon",
         coordinates: [[
           [-120, 35],
           [-115, 32],
@@ -79,7 +97,7 @@ const CloudcastingMap: React.FC = () => {
       map.current.on('load', () => {
         setMapLoaded(true);
         
-        // Add cloud data source
+        // Add cloud data source with properly typed data
         if (map.current) {
           map.current.addSource('clouds', {
             type: 'geojson',
@@ -130,7 +148,7 @@ const CloudcastingMap: React.FC = () => {
     const opacity = 0.3 + (timePercent * 0.7); // Varies between 0.3 and 1.0
     
     // Update the features in the GeoJSON to simulate movement
-    const updatedClouds = {
+    const updatedClouds: CloudCollection = {
       ...dummyCloudData,
       features: dummyCloudData.features.map(feature => {
         // For each cloud, shift its position slightly based on the time
