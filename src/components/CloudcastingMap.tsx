@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -7,7 +6,7 @@ import { Slider } from '@/components/ui/slider';
 import { RefreshCw, Info, ZoomIn, ZoomOut } from 'lucide-react';
 
 // Replace with your Mapbox token
-const MAPBOX_TOKEN = 'pk.eyJ1IjoibG92YWJsZXRva2VuIiwiYSI6ImNsdDBhdWNoZzA2cmMyanA3NnUzajZmNnMifQ.OQsI21JrQfewDBBdnM-bUQ';
+const MAPBOX_TOKEN = 'pk.eyJ1IjoiZmxvd2lydHoiLCJhIjoiY2tlcGhtMnFnMWRzajJ2bzhmdGs5ZXVveSJ9.Dq5iSpi54SaajfdMyM_8fQ';
 
 // Define correct GeoJSON types
 interface CloudFeature {
