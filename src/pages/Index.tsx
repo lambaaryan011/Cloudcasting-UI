@@ -1,12 +1,18 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import React from 'react';
+import CloudcastingHeader from '@/components/CloudcastingHeader';
+import CloudcastingMap from '@/components/CloudcastingMap';
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
-      </div>
+    <div className="flex flex-col h-screen bg-cloud-light">
+      <CloudcastingHeader />
+      <main className="flex-grow">
+        <CloudcastingMap />
+      </main>
+      <footer className="bg-white py-2 text-center text-xs text-muted-foreground border-t border-cloud-border">
+        <p>Cloudcasting UI Prototype • {new Date().getFullYear()}</p>
+      </footer>
     </div>
   );
 };
