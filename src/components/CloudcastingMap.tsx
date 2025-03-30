@@ -1,9 +1,7 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
 import { Info, ZoomIn, ZoomOut } from 'lucide-react';
 import { chartEvents } from './SolarForecastChart';
 
@@ -156,12 +154,12 @@ const CloudcastingMap: React.FC = () => {
         
         // Add city markers to make more click targets
         const cities = [
-          { lngLat: [-74.0060, 40.7128], id: 'nyc', name: 'New York City' },
-          { lngLat: [-87.6298, 41.8781], id: 'chicago', name: 'Chicago' },
-          { lngLat: [-122.4194, 37.7749], id: 'sf', name: 'San Francisco' },
-          { lngLat: [-104.9903, 39.7392], id: 'denver', name: 'Denver' },
-          { lngLat: [-95.3698, 29.7604], id: 'houston', name: 'Houston' },
-          { lngLat: [-84.3880, 33.7490], id: 'atlanta', name: 'Atlanta' },
+          { lngLat: [-74.0060, 40.7128] as [number, number], id: 'nyc', name: 'New York City' },
+          { lngLat: [-87.6298, 41.8781] as [number, number], id: 'chicago', name: 'Chicago' },
+          { lngLat: [-122.4194, 37.7749] as [number, number], id: 'sf', name: 'San Francisco' },
+          { lngLat: [-104.9903, 39.7392] as [number, number], id: 'denver', name: 'Denver' },
+          { lngLat: [-95.3698, 29.7604] as [number, number], id: 'houston', name: 'Houston' },
+          { lngLat: [-84.3880, 33.7490] as [number, number], id: 'atlanta', name: 'Atlanta' },
         ];
         
         // Add markers for the cities

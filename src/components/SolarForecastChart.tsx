@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
-import { ChartContainer, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
+import { ChartContainer } from '@/components/ui/chart';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 // Event bus for communication between components
@@ -87,11 +87,11 @@ const SolarForecastChart: React.FC = () => {
       setLocationText(data.name || `Location ${data.id}`);
     });
     
-    return () => unsubscribe();
+    return unsubscribe;
   }, []);
 
   return (
-    <Card className="p-0 border-0 bg-gray-700 rounded-none">
+    <Card className="p-0 border-0 bg-gray-700 rounded-none h-full">
       <div className="h-[350px] w-full">
         <div className="absolute left-4 top-3 z-10 bg-gray-800/80 backdrop-blur-sm px-3 py-1 rounded text-sm text-white">
           {locationText}

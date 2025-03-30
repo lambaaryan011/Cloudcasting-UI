@@ -10,8 +10,8 @@ const Index = () => {
     <div className="flex flex-col h-screen bg-slate-900">
       <SolarHeader />
       <RegionHeader />
-      <main className="flex-grow grid grid-cols-1 md:grid-cols-2 h-[calc(100vh-132px)]">
-        <div className="h-full overflow-hidden border-r border-slate-800">
+      <main className="grid grid-cols-1 md:grid-cols-2 flex-grow">
+        <div className="h-full border-r border-slate-800">
           <SolarForecastChart />
         </div>
         <div className="h-full">
